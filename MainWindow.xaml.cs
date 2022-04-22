@@ -29,12 +29,19 @@ namespace JSON2CSV
             InitializeComponent();
         }
 
+        private bool IsValidJSON = true;
+
         private void ConvertToCSV(object sender, RoutedEventArgs e)
         {
+            if(!IsValidJSON)
+            {
+                ErrorLabel.Content = "Please, make sure to enter a valid JSON text.";
+                return;
+            }
             var jsonRes = JsonConvert.DeserializeObject<dynamic>(JSONInput.Text);
             JObject firstItem;
             string objValues = "";
-            bool isArray = jsonRes.Type.ToString() == "Array";
+            bool isArray = jsonRes.Type?.ToString() == "Array";
             if (isArray)
             {
                 firstItem = jsonRes[0];
@@ -51,6 +58,8 @@ namespace JSON2CSV
             IEnumerable<JProperty> allProps = firstItem.Properties();
             IEnumerable<string> propsString = allProps.Select(prop => prop.Name);
             string headers = string.Join(", ", propsString);
+            CSVOutput.Foreground = Brushes.Black;
+            CSVOutput.FontStyle = FontStyles.Normal;
             CSVOutput.Text = headers + objValues;
         }
 
@@ -71,6 +80,7 @@ namespace JSON2CSV
 
         private void JSONInput_GotFocus(object sender, RoutedEventArgs e)
         {
+            if (JSONInput.Foreground != Brushes.Gray) return;
             JSONInput.Text = "";
             JSONInput.Foreground = Brushes.Black;
             JSONInput.FontStyle = FontStyles.Normal;
@@ -87,6 +97,21 @@ namespace JSON2CSV
             CSVOutput.Text = "You will see your CSV output here...";
             CSVOutput.Foreground = Brushes.Gray;
             CSVOutput.FontStyle = FontStyles.Italic;
+        }
+
+        private void JSONInput_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            try
+            {
+                dynamic jsonObject = JsonConvert.DeserializeObject<dynamic>(JSONInput.Text);
+                if (jsonObject is null) throw new Exception("Empty object");
+                ErrorLabel.Content = "";
+                IsValidJSON = true;
+            } 
+            catch
+            {
+                IsValidJSON = false;
+            }
         }
     }
 }
